@@ -54,6 +54,11 @@ app.use('/api/groups', require('./routes/groupRoutes'));
 app.use('/api/images', require('./routes/imageRoutes'));
 app.use('/api/contact', require('./routes/contactRoutes'));
 
+// Root route
+app.get('/', (req, res) => {
+  res.send('🚀 SmartGallery API is running...');
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
