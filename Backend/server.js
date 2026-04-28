@@ -38,7 +38,7 @@ app.use(morgan('dev'));
 // CORS
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: [process.env.CLIENT_URL, 'https://smart-gallery1.netlify.app', 'http://localhost:5173', 'http://localhost:5174'].filter(Boolean),
     credentials: true,
   })
 );
