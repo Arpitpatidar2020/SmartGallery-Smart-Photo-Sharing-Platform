@@ -64,8 +64,18 @@ const GroupManagePage = () => {
   }
 
   const handleUpload = async (e) => {
-    const files = e.target.files
-    if (!files?.length) return
+    const files = Array.from(e.target.files)
+    if (!files.length) return
+
+    // Vercel limit is 4.5MB total. We check each and total.
+    const MAX_SIZE = 4 * 1024 * 1024
+    let totalSize = 0
+    for (const file of files) {
+      if (file.size > MAX_SIZE) return toast.error(`File "${file.name}" is too large (>4MB)`)
+      totalSize += file.size
+    }
+    if (totalSize > MAX_SIZE) return toast.error('Total upload size must be under 4MB for Vercel')
+
     setUploading(true)
 
     try {
