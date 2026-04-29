@@ -21,7 +21,10 @@ const ProfilePage = ({ isAdmin = true }) => {
     const file = e.target.files[0]
     if (!file) return
     if (!file.type.startsWith('image/')) return toast.error('Please select an image')
-    if (file.size > 4 * 1024 * 1024) return toast.error('Image must be under 4MB (Vercel limit)')
+    if (file.size > 4.5 * 1024 * 1024) {
+      e.target.value = '' // Reset input
+      return toast.error('Image must be under 4.5MB (Vercel limit)')
+    }
 
     const loadingToast = toast.loading('Uploading image...')
     setUploading(true)
