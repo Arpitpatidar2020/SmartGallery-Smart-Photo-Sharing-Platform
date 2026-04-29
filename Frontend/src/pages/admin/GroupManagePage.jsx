@@ -8,7 +8,7 @@ import {
 import * as faceapi from 'face-api.js'
 import { getGroup, addFolder, updateFolder, deleteFolder } from '../../services/groupService'
 import { HiPencil } from 'react-icons/hi'
-import { getGroupImages, uploadImage, uploadBulk, updateImage, deleteImage, deleteBulkImages } from '../../services/imageService'
+import { getGroupImages, uploadImage, uploadBulk, updateImage, deleteImage, deleteBulkImages, getSignature } from '../../services/imageService'
 import ImageCard from '../../components/shared/ImageCard'
 import Pagination from '../../components/shared/Pagination'
 import SearchBar from '../../components/shared/SearchBar'
