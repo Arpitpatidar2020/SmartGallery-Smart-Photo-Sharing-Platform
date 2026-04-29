@@ -390,7 +390,7 @@ const GroupManagePage = () => {
           </div>
           <div>
             <label className="text-sm text-dark-300 mb-2 block font-medium">Choose Images</label>
-            <p className="text-dark-500 text-xs mb-2">Select one or multiple images (One-Shot Upload)</p>
+            <p className="text-dark-500 text-xs mb-2">Select one or multiple images (Max total size: 4.5 MB)</p>
             <input
               type="file"
               accept="image/*"

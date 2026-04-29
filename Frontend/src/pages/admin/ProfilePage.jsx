@@ -122,7 +122,7 @@ const ProfilePage = ({ isAdmin = true }) => {
           <div className="flex items-center gap-3">
             <label className="btn-secondary !py-2 !px-4 text-sm flex items-center gap-2 cursor-pointer hover:text-primary-400 transition-all">
               <HiCamera className="w-4 h-4" />
-              {uploading ? 'Uploading...' : 'Change Photo'}
+              {uploading ? 'Uploading...' : 'Change Photo (Max: 4.5MB)'}
               <input
                 type="file"
                 accept="image/*"
