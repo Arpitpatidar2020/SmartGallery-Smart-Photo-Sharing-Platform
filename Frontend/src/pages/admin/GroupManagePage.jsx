@@ -69,12 +69,12 @@ const GroupManagePage = () => {
     const files = Array.from(e.target.files)
     if (!files.length) return
 
-    // Limit each file to 10MB (Cloudinary free tier limit is much higher, but we keep it reasonable)
-    const MAX_FILE_SIZE = 10 * 1024 * 1024
+    // Limit each file to 100MB for Signed Upload
+    const MAX_FILE_SIZE = 100 * 1024 * 1024
     for (const file of files) {
       if (file.size > MAX_FILE_SIZE) {
         e.target.value = ''
-        return toast.error(`File "${file.name}" is too large (>10MB)`)
+        return toast.error(`File "${file.name}" is too large (>100MB)`)
       }
     }
 
@@ -82,9 +82,13 @@ const GroupManagePage = () => {
     const loadingToast = toast.loading(`Uploading ${files.length} image(s)...`)
 
     try {
+      // Get signature from backend for secure signed upload
+      const folderPath = `smartgallery/groups/${id}`
+      const { data: sigData } = await getSignature(folderPath)
+
       if (files.length === 1) {
-        // Single Upload
-        const result = await uploadToCloudinary(files[0], `smartgallery/groups/${id}`)
+        // Single Signed Upload
+        const result = await uploadToCloudinary(files[0], folderPath, sigData)
         
         await uploadImage({
           groupId: id,
@@ -98,11 +102,11 @@ const GroupManagePage = () => {
         })
         toast.success('Image uploaded!', { id: loadingToast })
       } else {
-        // Bulk Upload
+        // Bulk Signed Upload
         const uploadedData = []
         for (let i = 0; i < files.length; i++) {
           toast.loading(`Uploading to Cloudinary (${i + 1}/${files.length})...`, { id: loadingToast })
-          const result = await uploadToCloudinary(files[i], `smartgallery/groups/${id}`)
+          const result = await uploadToCloudinary(files[i], folderPath, sigData)
           uploadedData.push({
             url: result.secure_url,
             publicId: result.public_id,
@@ -418,7 +422,7 @@ const GroupManagePage = () => {
           </div>
           <div>
             <label className="text-sm text-dark-300 mb-2 block font-medium">Choose Images</label>
-            <p className="text-dark-500 text-xs mb-2">Select one or multiple images (Max: 10MB each)</p>
+            <p className="text-dark-500 text-xs mb-2">Select one or multiple images (Max: 100MB each)</p>
             <input
               type="file"
               accept="image/*"

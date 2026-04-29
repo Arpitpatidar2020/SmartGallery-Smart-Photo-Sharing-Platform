@@ -359,6 +359,23 @@ exports.getAllPublished = async (req, res, next) => {
   }
 };
 
+// @desc    Get Cloudinary signature for signed upload
+// @route   GET /api/images/signature
+exports.getCloudinarySignature = (req, res) => {
+  const timestamp = Math.round(new Date().getTime() / 1000);
+  const signature = cloudinary.utils.api_sign_request(
+    { timestamp, folder: req.query.folder || 'smartgallery' },
+    process.env.CLOUDINARY_API_SECRET
+  );
+
+  res.json({
+    signature,
+    timestamp,
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    apiKey: process.env.CLOUDINARY_API_KEY,
+  });
+};
+
 // Euclidean distance for face comparison
 function euclideanDistance(arr1, arr2) {
   if (arr1.length !== arr2.length) return Infinity;

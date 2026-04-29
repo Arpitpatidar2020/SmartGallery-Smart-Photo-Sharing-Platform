@@ -11,6 +11,7 @@ const {
   getFavorites,
   getMyImages,
   getAllPublished,
+  getCloudinarySignature,
 } = require('../controllers/imageController');
 const { auth, optionalAuth } = { 
   auth: require('../middleware/auth'), 
@@ -23,6 +24,7 @@ const { uploadSingle, uploadMultiple } = require('../middleware/upload');
 router.get('/favorites', auth, getFavorites);
 router.get('/my-images', auth, getMyImages);
 router.get('/all-published', auth, getAllPublished);
+router.get('/signature', auth, admin, getCloudinarySignature);
 
 // Group images
 router.get('/group/:groupId', optionalAuth, getGroupImages);

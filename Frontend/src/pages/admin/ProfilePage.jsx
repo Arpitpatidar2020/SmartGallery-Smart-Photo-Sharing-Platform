@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { HiCamera, HiUser, HiMail, HiLockClosed, HiTrash, HiEye, HiEyeOff } from 'react-icons/hi'
 import { useAuth } from '../../context/AuthContext'
 import { updateProfile, uploadProfileImage, deleteProfileImage } from '../../services/userService'
+import { getSignature } from '../../services/imageService'
 import toast from 'react-hot-toast'
 import { confirmToast } from '../../utils/toastUtils'
 
@@ -24,19 +25,25 @@ const ProfilePage = ({ isAdmin = true }) => {
     if (!file) return
     if (!file.type.startsWith('image/')) return toast.error('Please select an image')
     
-    // Increased limit as we now upload directly to Cloudinary
-    if (file.size > 10 * 1024 * 1024) {
+    // Increased limit as we now upload directly to Cloudinary (Signed Upload)
+    if (file.size > 100 * 1024 * 1024) {
       e.target.value = ''
-      return toast.error('Image must be under 10MB')
+      return toast.error('Image must be under 100MB')
     }
 
-    const loadingToast = toast.loading('Uploading image to Cloudinary...')
+    const loadingToast = toast.loading('Preparing secure upload...')
     setUploading(true)
     try {
-      // 1. Upload to Cloudinary
-      const result = await uploadToCloudinary(file, 'smartgallery/profiles')
+      // 1. Get signature from backend
+      const folderPath = 'smartgallery/profiles'
+      const { data: sigData } = await getSignature(folderPath)
+
+      // 2. Upload to Cloudinary (Signed)
+      toast.loading('Uploading to Cloudinary...', { id: loadingToast })
+      const result = await uploadToCloudinary(file, folderPath, sigData)
       
-      // 2. Save to Backend
+      // 3. Save to Backend
+      toast.loading('Saving profile...', { id: loadingToast })
       const { data } = await uploadProfileImage({
         url: result.secure_url,
         publicId: result.public_id
@@ -136,7 +143,7 @@ const ProfilePage = ({ isAdmin = true }) => {
           <div className="flex items-center gap-3">
             <label className="btn-secondary !py-2 !px-4 text-sm flex items-center gap-2 cursor-pointer hover:text-primary-400 transition-all">
               <HiCamera className="w-4 h-4" />
-              {uploading ? 'Uploading...' : 'Change Photo (Max: 10MB)'}
+              {uploading ? 'Uploading...' : 'Change Photo (Max: 100MB)'}
               <input
                 type="file"
                 accept="image/*"
