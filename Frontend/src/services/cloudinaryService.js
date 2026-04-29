@@ -26,7 +26,8 @@ export const uploadToCloudinary = async (file, folder = 'qwikpic') => {
     );
     return response.data;
   } catch (error) {
-    console.error('Cloudinary Upload Error:', error);
-    throw new Error(error.response?.data?.error?.message || 'Failed to upload to Cloudinary');
+    const errorMsg = error.response?.data?.error?.message || 'Failed to upload to Cloudinary';
+    console.error('Cloudinary Upload Error Details:', error.response?.data); // Exact error from Cloudinary
+    throw new Error(errorMsg);
   }
 };
