@@ -28,34 +28,29 @@ exports.updateProfile = async (req, res, next) => {
   }
 };
 
-// @desc    Upload profile image
+// @desc    Update profile image (metadata from direct upload)
 // @route   POST /api/users/profile-image
 exports.uploadProfileImage = async (req, res, next) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'No image file provided' });
+    const { url, publicId } = req.body;
+
+    if (!url || !publicId) {
+      return res.status(400).json({ message: 'URL and publicId are required' });
     }
 
     const user = await User.findById(req.user._id);
 
     // Delete old profile image from Cloudinary if exists
     if (user.profileImagePublicId) {
-      await cloudinary.uploader.destroy(user.profileImagePublicId);
+      await cloudinary.uploader.destroy(user.profileImagePublicId).catch(err => console.log('Cleanup failed:', err));
     }
 
-    // Upload new image
-    const fileBase64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-    const result = await cloudinary.uploader.upload(fileBase64, {
-      folder: 'smartgallery/profiles',
-      resource_type: 'image',
-    });
-
-    user.profileImage = result.secure_url;
-    user.profileImagePublicId = result.public_id;
+    user.profileImage = url;
+    user.profileImagePublicId = publicId;
     await user.save({ validateBeforeSave: false });
 
     res.json({
-      profileImage: result.secure_url,
+      profileImage: url,
       message: 'Profile image updated successfully',
     });
   } catch (error) {

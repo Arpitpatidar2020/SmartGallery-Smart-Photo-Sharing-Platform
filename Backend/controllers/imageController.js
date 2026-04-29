@@ -54,36 +54,36 @@ exports.getGroupImages = async (req, res, next) => {
   }
 };
 
-// @desc    Upload single image
+// @desc    Save single image (metadata from direct upload)
 // @route   POST /api/images/upload
 exports.uploadImage = async (req, res, next) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'No image file provided' });
+    const { 
+      groupId, 
+      folder = 'All Photos', 
+      status = 'published',
+      url,
+      publicId,
+      width,
+      height,
+      size,
+      originalFilename
+    } = req.body;
+
+    if (!groupId || !url || !publicId) {
+      return res.status(400).json({ message: 'Group ID, URL and publicId are required' });
     }
-
-    const { groupId, folder = 'All Photos', status = 'published' } = req.body;
-
-    if (!groupId) {
-      return res.status(400).json({ message: 'Group ID is required' });
-    }
-
-    const fileBase64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-    const result = await cloudinary.uploader.upload(fileBase64, {
-      folder: `smartgallery/groups/${groupId}`,
-      resource_type: 'image',
-    });
 
     const image = await Image.create({
-      url: result.secure_url,
-      publicId: result.public_id,
+      url,
+      publicId,
       group: groupId,
       folder,
       status,
-      width: result.width,
-      height: result.height,
-      size: result.bytes,
-      originalFilename: req.file.originalname,
+      width,
+      height,
+      size,
+      originalFilename,
       uploadedBy: req.user._id,
     });
 
@@ -93,53 +93,43 @@ exports.uploadImage = async (req, res, next) => {
   }
 };
 
-// @desc    Upload multiple images (one-shot)
+// @desc    Save multiple images (metadata from direct upload)
 // @route   POST /api/images/upload-bulk
 exports.uploadBulk = async (req, res, next) => {
   try {
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ message: 'No image files provided' });
+    const { groupId, images: imagesData } = req.body;
+
+    if (!groupId || !imagesData || !Array.isArray(imagesData)) {
+      return res.status(400).json({ message: 'Group ID and images data array are required' });
     }
 
-    const { groupId, folder = 'All Photos', status = 'published' } = req.body;
-
-    if (!groupId) {
-      return res.status(400).json({ message: 'Group ID is required' });
-    }
-
-    const uploadedImages = [];
+    const savedImages = [];
     const errors = [];
 
-    for (const file of req.files) {
+    for (const data of imagesData) {
       try {
-        const fileBase64 = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
-        const result = await cloudinary.uploader.upload(fileBase64, {
-          folder: `smartgallery/groups/${groupId}`,
-          resource_type: 'image',
-        });
-
         const image = await Image.create({
-          url: result.secure_url,
-          publicId: result.public_id,
+          url: data.url,
+          publicId: data.publicId,
           group: groupId,
-          folder,
-          status,
-          width: result.width,
-          height: result.height,
-          size: result.bytes,
-          originalFilename: file.originalname,
+          folder: data.folder || 'All Photos',
+          status: data.status || 'published',
+          width: data.width,
+          height: data.height,
+          size: data.size,
+          originalFilename: data.originalFilename,
           uploadedBy: req.user._id,
         });
 
-        uploadedImages.push(image);
+        savedImages.push(image);
       } catch (err) {
-        errors.push({ file: file.originalname, error: err.message });
+        errors.push({ file: data.originalFilename, error: err.message });
       }
     }
 
     res.status(201).json({
-      message: `${uploadedImages.length} images uploaded successfully`,
-      images: uploadedImages,
+      message: `${savedImages.length} images saved successfully`,
+      images: savedImages,
       errors: errors.length > 0 ? errors : undefined,
     });
   } catch (error) {

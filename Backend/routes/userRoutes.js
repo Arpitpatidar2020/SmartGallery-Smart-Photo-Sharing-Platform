@@ -14,7 +14,7 @@ const { uploadSingle } = require('../middleware/upload');
 
 router.get('/', auth, admin, getAllUsers);
 router.put('/profile', auth, updateProfile);
-router.post('/profile-image', auth, uploadSingle, uploadProfileImage);
+router.post('/profile-image', auth, uploadProfileImage);
 router.delete('/profile-image', auth, removeProfileImage);
 router.post('/profile/face-descriptor', auth, storeFaceDescriptor);
 router.get('/stats', auth, admin, getStats);

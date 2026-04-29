@@ -17,6 +17,8 @@ import Loader from '../../components/shared/Loader'
 import toast from 'react-hot-toast'
 import { confirmToast } from '../../utils/toastUtils'
 
+import { uploadToCloudinary } from '../../services/cloudinaryService'
+
 const GroupManagePage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -67,45 +69,65 @@ const GroupManagePage = () => {
     const files = Array.from(e.target.files)
     if (!files.length) return
 
-    // Vercel limit is 4.5MB total. We check each and total.
-    const MAX_SIZE = 4.5 * 1024 * 1024
-    let totalSize = 0
+    // Limit each file to 10MB (Cloudinary free tier limit is much higher, but we keep it reasonable)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024
     for (const file of files) {
-      if (file.size > MAX_SIZE) {
+      if (file.size > MAX_FILE_SIZE) {
         e.target.value = ''
-        return toast.error(`File "${file.name}" is too large (>4.5MB)`)
+        return toast.error(`File "${file.name}" is too large (>10MB)`)
       }
-      totalSize += file.size
-    }
-    if (totalSize > MAX_SIZE) {
-      e.target.value = ''
-      return toast.error('Total upload size must be under 4.5MB for Vercel')
     }
 
     setUploading(true)
+    const loadingToast = toast.loading(`Uploading ${files.length} image(s)...`)
 
     try {
       if (files.length === 1) {
-        const fd = new FormData()
-        fd.append('image', files[0])
-        fd.append('groupId', id)
-        fd.append('folder', uploadFolder)
-        await uploadImage(fd)
-        toast.success('Image uploaded!')
+        // Single Upload
+        const result = await uploadToCloudinary(files[0], `smartgallery/groups/${id}`)
+        
+        await uploadImage({
+          groupId: id,
+          folder: uploadFolder,
+          url: result.secure_url,
+          publicId: result.public_id,
+          width: result.width,
+          height: result.height,
+          size: result.bytes,
+          originalFilename: files[0].name
+        })
+        toast.success('Image uploaded!', { id: loadingToast })
       } else {
-        const fd = new FormData()
-        for (const file of files) fd.append('images', file)
-        fd.append('groupId', id)
-        fd.append('folder', uploadFolder)
-        const { data } = await uploadBulk(fd)
-        toast.success(data.message)
+        // Bulk Upload
+        const uploadedData = []
+        for (let i = 0; i < files.length; i++) {
+          toast.loading(`Uploading to Cloudinary (${i + 1}/${files.length})...`, { id: loadingToast })
+          const result = await uploadToCloudinary(files[i], `smartgallery/groups/${id}`)
+          uploadedData.push({
+            url: result.secure_url,
+            publicId: result.public_id,
+            width: result.width,
+            height: result.height,
+            size: result.bytes,
+            originalFilename: files[i].name,
+            folder: uploadFolder
+          })
+        }
+
+        toast.loading('Saving metadata to database...', { id: loadingToast })
+        const { data } = await uploadBulk({
+          groupId: id,
+          images: uploadedData
+        })
+        toast.success(data.message, { id: loadingToast })
       }
       setShowUpload(false)
       fetchImages()
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Upload failed')
+      toast.error(err.message || 'Upload failed', { id: loadingToast })
     } finally {
       setUploading(false)
+      e.target.value = ''
     }
   }
 
@@ -396,7 +418,7 @@ const GroupManagePage = () => {
           </div>
           <div>
             <label className="text-sm text-dark-300 mb-2 block font-medium">Choose Images</label>
-            <p className="text-dark-500 text-xs mb-2">Select one or multiple images (Max total size: 4.5 MB)</p>
+            <p className="text-dark-500 text-xs mb-2">Select one or multiple images (Max: 10MB each)</p>
             <input
               type="file"
               accept="image/*"

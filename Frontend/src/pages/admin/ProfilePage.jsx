@@ -6,6 +6,8 @@ import { updateProfile, uploadProfileImage, deleteProfileImage } from '../../ser
 import toast from 'react-hot-toast'
 import { confirmToast } from '../../utils/toastUtils'
 
+import { uploadToCloudinary } from '../../services/cloudinaryService'
+
 const ProfilePage = ({ isAdmin = true }) => {
   const { user, updateUser } = useAuth()
   const [form, setForm] = useState({
@@ -21,25 +23,34 @@ const ProfilePage = ({ isAdmin = true }) => {
     const file = e.target.files[0]
     if (!file) return
     if (!file.type.startsWith('image/')) return toast.error('Please select an image')
-    if (file.size > 4.5 * 1024 * 1024) {
-      e.target.value = '' // Reset input
-      return toast.error('Image must be under 4.5MB (Vercel limit)')
+    
+    // Increased limit as we now upload directly to Cloudinary
+    if (file.size > 10 * 1024 * 1024) {
+      e.target.value = ''
+      return toast.error('Image must be under 10MB')
     }
 
-    const loadingToast = toast.loading('Uploading image...')
+    const loadingToast = toast.loading('Uploading image to Cloudinary...')
     setUploading(true)
     try {
-      const formData = new FormData()
-      formData.append('image', file)
-      const { data } = await uploadProfileImage(formData)
+      // 1. Upload to Cloudinary
+      const result = await uploadToCloudinary(file, 'smartgallery/profiles')
+      
+      // 2. Save to Backend
+      const { data } = await uploadProfileImage({
+        url: result.secure_url,
+        publicId: result.public_id
+      })
+
       // Add timestamp to force image refresh in browser (prevents stale/broken state)
       const freshUrl = `${data.profileImage}${data.profileImage.includes('?') ? '&' : '?'}t=${Date.now()}`
       updateUser({ profileImage: freshUrl })
       toast.success('Profile image updated!', { id: loadingToast })
     } catch (err) {
-      toast.error('Failed to upload image', { id: loadingToast })
+      toast.error(err.message || 'Failed to upload image', { id: loadingToast })
     } finally {
       setUploading(false)
+      e.target.value = ''
     }
   }
 
@@ -125,7 +136,7 @@ const ProfilePage = ({ isAdmin = true }) => {
           <div className="flex items-center gap-3">
             <label className="btn-secondary !py-2 !px-4 text-sm flex items-center gap-2 cursor-pointer hover:text-primary-400 transition-all">
               <HiCamera className="w-4 h-4" />
-              {uploading ? 'Uploading...' : 'Change Photo (Max: 4.5MB)'}
+              {uploading ? 'Uploading...' : 'Change Photo (Max: 10MB)'}
               <input
                 type="file"
                 accept="image/*"

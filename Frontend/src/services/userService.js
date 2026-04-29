@@ -1,8 +1,8 @@
 import api from './api'
 
 export const updateProfile = (data) => api.put('/users/profile', data)
-export const uploadProfileImage = (formData) =>
-  api.post('/users/profile-image', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+export const uploadProfileImage = (data) => 
+  api.post('/users/profile-image', data)
 export const deleteProfileImage = () => api.delete('/users/profile-image')
 export const storeFaceDescriptor = (descriptor) =>
   api.post('/users/profile/face-descriptor', { descriptor })

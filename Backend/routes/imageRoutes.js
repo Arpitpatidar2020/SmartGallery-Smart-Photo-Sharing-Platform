@@ -28,8 +28,8 @@ router.get('/all-published', auth, getAllPublished);
 router.get('/group/:groupId', optionalAuth, getGroupImages);
 
 // Upload
-router.post('/upload', auth, admin, uploadSingle, uploadImage);
-router.post('/upload-bulk', auth, admin, uploadMultiple, uploadBulk);
+router.post('/upload', auth, admin, uploadImage);
+router.post('/upload-bulk', auth, admin, uploadBulk);
 
 // Bulk delete
 router.post('/delete-bulk', auth, admin, deleteBulk);
