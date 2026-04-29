@@ -24,7 +24,7 @@ const ProfilePage = ({ isAdmin = true }) => {
     const file = e.target.files[0]
     if (!file) return
     if (!file.type.startsWith('image/')) return toast.error('Please select an image')
-    
+
     // Increased limit as we now upload directly to Cloudinary (Signed Upload)
     if (file.size > 100 * 1024 * 1024) {
       e.target.value = ''
@@ -39,9 +39,9 @@ const ProfilePage = ({ isAdmin = true }) => {
       const { data: sigData } = await getSignature(folderPath)
 
       // 2. Upload to Cloudinary (Signed)
-      toast.loading('Uploading to Cloudinary...', { id: loadingToast })
+      toast.loading('Uploading profile photo...', { id: loadingToast })
       const result = await uploadToCloudinary(file, folderPath, sigData)
-      
+
       // 3. Save to Backend
       toast.loading('Saving profile...', { id: loadingToast })
       const { data } = await uploadProfileImage({
@@ -130,7 +130,7 @@ const ProfilePage = ({ isAdmin = true }) => {
                 </span>
               </div>
             )}
-            
+
             {/* Spinning loader over image only during upload */}
             {uploading && (
               <div className="absolute inset-0 bg-dark-950/60 rounded-full flex items-center justify-center backdrop-blur-[2px]">
@@ -152,7 +152,7 @@ const ProfilePage = ({ isAdmin = true }) => {
                 disabled={uploading}
               />
             </label>
-            
+
             {user?.profileImage && !uploading && (
               <button
                 type="button"
