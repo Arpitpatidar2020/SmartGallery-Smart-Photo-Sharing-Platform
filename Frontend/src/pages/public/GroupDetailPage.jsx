@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { getGroup } from '../../services/groupService'
-import { getGroupImages, toggleFavorite, getFavorites } from '../../services/imageService'
+import { getGroupImages } from '../../services/imageService'
 import ImageCard from '../../components/shared/ImageCard'
 import Pagination from '../../components/shared/Pagination'
 import SearchBar from '../../components/shared/SearchBar'
@@ -24,7 +24,6 @@ const GroupDetailPage = () => {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [isForbidden, setIsForbidden] = useState(false)
-  const [favorites, setFavorites] = useState(new Set())
 
   // Viewer State
   const [viewerOpen, setViewerOpen] = useState(false)
@@ -38,29 +37,7 @@ const GroupDetailPage = () => {
 
   useEffect(() => {
     fetchGroup()
-    if (user) fetchFavIds()
-  }, [id, user])
-
-  const fetchFavIds = async () => {
-    try {
-      const { data } = await getFavorites({ limit: 9999 })
-      setFavorites(new Set(data.images.map((img) => img._id)))
-    } catch {}
-  }
-
-  const handleFavorite = async (imgId) => {
-    try {
-      const { data } = await toggleFavorite(imgId)
-      setFavorites((prev) => {
-        const next = new Set(prev)
-        data.isFavorited ? next.add(imgId) : next.delete(imgId)
-        return next
-      })
-      toast.success(data.message)
-    } catch {
-      toast.error('Please login to favorite images')
-    }
-  }
+  }, [id])
 
   useEffect(() => {
     if (group) fetchImages()
@@ -191,8 +168,6 @@ const GroupDetailPage = () => {
                     image={image}
                     showActions={true}
                     onClickImage={openViewer}
-                    onFavorite={handleFavorite}
-                    isFavorited={favorites.has(image._id)}
                   />
                 ))}
               </div>
@@ -214,8 +189,6 @@ const GroupDetailPage = () => {
         onClose={() => setViewerOpen(false)}
         onNext={() => setViewerIndex(prev => Math.min(images.length - 1, prev + 1))}
         onPrev={() => setViewerIndex(prev => Math.max(0, prev - 1))}
-        onFavorite={handleFavorite}
-        isFavorited={images[viewerIndex] ? favorites.has(images[viewerIndex]._id) : false}
       />
     </div>
   )
