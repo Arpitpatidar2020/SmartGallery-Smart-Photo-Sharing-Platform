@@ -15,6 +15,7 @@ import SearchBar from '../../components/shared/SearchBar'
 import Modal from '../../components/shared/Modal'
 import Loader from '../../components/shared/Loader'
 import toast from 'react-hot-toast'
+import ImageViewer from '../../components/shared/ImageViewer'
 import { confirmToast } from '../../utils/toastUtils'
 
 import { uploadToCloudinary } from '../../services/cloudinaryService'
@@ -40,6 +41,16 @@ const GroupManagePage = () => {
   const [scanning, setScanning] = useState(false)
   const [scanProgress, setScanProgress] = useState(0)
   const [scanTotal, setScanTotal] = useState(0)
+
+  // Viewer State
+  const [viewerOpen, setViewerOpen] = useState(false)
+  const [viewerIndex, setViewerIndex] = useState(0)
+
+  const openViewer = (image) => {
+    const index = images.findIndex(img => img._id === image._id)
+    setViewerIndex(index)
+    setViewerOpen(true)
+  }
 
   useEffect(() => { fetchGroup() }, [id])
   useEffect(() => { if (group) fetchImages() }, [group, activeTab, page, search])
@@ -375,6 +386,7 @@ const GroupManagePage = () => {
                   isSelected={selected.includes(image._id)}
                   onSelect={toggleSelect}
                   isSelectionMode={selected.length > 0}
+                  onClickImage={openViewer}
                 />
                 {/* Admin actions overlay */}
                 <div className="absolute bottom-6 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
@@ -505,6 +517,17 @@ const GroupManagePage = () => {
           </p>
         </div>
       </Modal>
+
+      {/* Full Screen Image Viewer */}
+      <ImageViewer
+        isOpen={viewerOpen}
+        images={images}
+        currentIndex={viewerIndex}
+        onClose={() => setViewerOpen(false)}
+        onNext={() => setViewerIndex(prev => Math.min(images.length - 1, prev + 1))}
+        onPrev={() => setViewerIndex(prev => Math.max(0, prev - 1))}
+        onDelete={handleDeleteImage}
+      />
     </div>
   )
 }

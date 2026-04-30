@@ -2,12 +2,15 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { getGroup } from '../../services/groupService'
-import { getGroupImages } from '../../services/imageService'
+import { getGroupImages, toggleFavorite, getFavorites } from '../../services/imageService'
 import ImageCard from '../../components/shared/ImageCard'
 import Pagination from '../../components/shared/Pagination'
 import SearchBar from '../../components/shared/SearchBar'
 import Loader from '../../components/shared/Loader'
 import toast from 'react-hot-toast'
+import ImageViewer from '../../components/shared/ImageViewer'
+import { HiLockClosed } from 'react-icons/hi'
+import { Link } from 'react-router-dom'
 
 const GroupDetailPage = () => {
   const { id } = useParams()
@@ -19,10 +22,43 @@ const GroupDetailPage = () => {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [isForbidden, setIsForbidden] = useState(false)
+  const [favorites, setFavorites] = useState(new Set())
+
+  // Viewer State
+  const [viewerOpen, setViewerOpen] = useState(false)
+  const [viewerIndex, setViewerIndex] = useState(0)
+
+  const openViewer = (image) => {
+    const index = images.findIndex(img => img._id === image._id)
+    setViewerIndex(index)
+    setViewerOpen(true)
+  }
 
   useEffect(() => {
     fetchGroup()
+    fetchFavIds()
   }, [id])
+
+  const fetchFavIds = async () => {
+    try {
+      const { data } = await getFavorites({ limit: 9999 })
+      setFavorites(new Set(data.images.map((img) => img._id)))
+    } catch {}
+  }
+
+  const handleFavorite = async (imgId) => {
+    try {
+      const { data } = await toggleFavorite(imgId)
+      setFavorites((prev) => {
+        const next = new Set(prev)
+        data.isFavorited ? next.add(imgId) : next.delete(imgId)
+        return next
+      })
+      toast.success(data.message)
+    } catch {
+      toast.error('Please login to favorite images')
+    }
+  }
 
   useEffect(() => {
     if (group) fetchImages()
@@ -152,6 +188,9 @@ const GroupDetailPage = () => {
                     key={image._id}
                     image={image}
                     showActions={true}
+                    onClickImage={openViewer}
+                    onFavorite={handleFavorite}
+                    isFavorited={favorites.has(image._id)}
                   />
                 ))}
               </div>
@@ -164,6 +203,18 @@ const GroupDetailPage = () => {
           )}
         </div>
       </section>
+
+      {/* Full Screen Image Viewer */}
+      <ImageViewer
+        isOpen={viewerOpen}
+        images={images}
+        currentIndex={viewerIndex}
+        onClose={() => setViewerOpen(false)}
+        onNext={() => setViewerIndex(prev => Math.min(images.length - 1, prev + 1))}
+        onPrev={() => setViewerIndex(prev => Math.max(0, prev - 1))}
+        onFavorite={handleFavorite}
+        isFavorited={images[viewerIndex] ? favorites.has(images[viewerIndex]._id) : false}
+      />
     </div>
   )
 }

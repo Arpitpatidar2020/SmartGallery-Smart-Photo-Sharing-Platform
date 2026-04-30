@@ -4,9 +4,6 @@ import { motion } from 'framer-motion'
 import {
   HiPhotograph,
   HiArrowLeft,
-  HiDownload,
-  HiHeart,
-  HiCheck,
   HiCollection
 } from 'react-icons/hi'
 import { getGroup } from '../../services/groupService'
@@ -16,6 +13,7 @@ import Pagination from '../../components/shared/Pagination'
 import SearchBar from '../../components/shared/SearchBar'
 import BulkActionBar from '../../components/shared/BulkActionBar'
 import Loader from '../../components/shared/Loader'
+import ImageViewer from '../../components/shared/ImageViewer'
 import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
 import toast from 'react-hot-toast'
@@ -32,6 +30,16 @@ const GroupAccessPage = () => {
   const [selected, setSelected] = useState([])
   const [favorites, setFavorites] = useState(new Set())
   const [activeTab, setActiveTab] = useState('All Photos')
+
+  // Viewer State
+  const [viewerOpen, setViewerOpen] = useState(false)
+  const [viewerIndex, setViewerIndex] = useState(0)
+
+  const openViewer = (image) => {
+    const index = images.findIndex(img => img._id === image._id)
+    setViewerIndex(index)
+    setViewerOpen(true)
+  }
 
   useEffect(() => {
     fetchGroup()
@@ -205,33 +213,38 @@ const GroupAccessPage = () => {
       </div>
 
       {/* Content */}
-      {loading ? (
-        <div className="flex justify-center py-20">
-          <Loader text="Fetching gallery..." />
+      <section>
+        <div className="min-h-[50vh]">
+          {loading ? (
+            <div className="flex justify-center py-20">
+              <Loader text="Fetching gallery..." />
+            </div>
+          ) : images.length > 0 ? (
+            <>
+              <div className="columns-2 md:columns-3 lg:columns-4 gap-3">
+                {images.map((image) => (
+                  <ImageCard
+                    key={image._id}
+                    image={image}
+                    onFavorite={handleFavorite}
+                    onSelect={toggleSelect}
+                    isSelected={selected.includes(image._id)}
+                    isFavorited={favorites.has(image._id)}
+                    isSelectionMode={selected.length > 0}
+                    onClickImage={openViewer}
+                  />
+                ))}
+              </div>
+              <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+            </>
+          ) : (
+            <div className="text-center py-20 bg-dark-900/50 rounded-3xl border border-dark-800">
+              <HiPhotograph className="w-16 h-16 text-dark-800 mx-auto mb-4" />
+              <p className="text-dark-500 text-lg">No matching photos found in this group.</p>
+            </div>
+          )}
         </div>
-      ) : images.length > 0 ? (
-        <>
-          <div className="columns-2 md:columns-3 lg:columns-4 gap-3">
-            {images.map((image) => (
-              <ImageCard
-                key={image._id}
-                image={image}
-                onFavorite={handleFavorite}
-                onSelect={toggleSelect}
-                isSelected={selected.includes(image._id)}
-                isFavorited={favorites.has(image._id)}
-                isSelectionMode={selected.length > 0}
-              />
-            ))}
-          </div>
-          <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
-        </>
-      ) : (
-        <div className="text-center py-20 bg-dark-900/50 rounded-3xl border border-dark-800">
-          <HiPhotograph className="w-16 h-16 text-dark-800 mx-auto mb-4" />
-          <p className="text-dark-500 text-lg">No matching photos found in this group.</p>
-        </div>
-      )}
+      </section>
 
       {/* Bulk Actions */}
       <BulkActionBar
@@ -240,6 +253,18 @@ const GroupAccessPage = () => {
         onDownload={handleBulkDownload}
         onFavorite={handleBulkFavorite}
         onClear={() => setSelected([])}
+      />
+
+      {/* Full Screen Image Viewer */}
+      <ImageViewer
+        isOpen={viewerOpen}
+        images={images}
+        currentIndex={viewerIndex}
+        onClose={() => setViewerOpen(false)}
+        onNext={() => setViewerIndex(prev => Math.min(images.length - 1, prev + 1))}
+        onPrev={() => setViewerIndex(prev => Math.max(0, prev - 1))}
+        onFavorite={handleFavorite}
+        isFavorited={images[viewerIndex] ? favorites.has(images[viewerIndex]._id) : false}
       />
     </div>
   )

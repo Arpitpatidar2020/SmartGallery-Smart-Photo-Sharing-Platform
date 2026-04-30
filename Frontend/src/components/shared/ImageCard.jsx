@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { HiDownload, HiHeart, HiCheck } from 'react-icons/hi'
 
-const ImageCard = ({ image, onFavorite, onSelect, isSelected, isFavorited, showActions = true, isSelectionMode = false }) => {
+const ImageCard = ({ image, onFavorite, onSelect, onClickImage, isSelected, isFavorited, showActions = true, isSelectionMode = false }) => {
   const [loaded, setLoaded] = useState(false)
 
   const handleDownload = async (e) => {
@@ -19,6 +19,14 @@ const ImageCard = ({ image, onFavorite, onSelect, isSelected, isFavorited, showA
     window.URL.revokeObjectURL(url)
   }
 
+  const handleClick = (e) => {
+    if (isSelectionMode) {
+      onSelect && onSelect(image._id)
+    } else if (onClickImage) {
+      onClickImage(image)
+    }
+  }
+
   return (
       <motion.div
       layout
@@ -26,7 +34,7 @@ const ImageCard = ({ image, onFavorite, onSelect, isSelected, isFavorited, showA
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
       className="group relative rounded-xl overflow-hidden bg-dark-800 cursor-pointer mb-3 break-inside-avoid shadow-lg"
-      onClick={() => onSelect && onSelect(image._id)}
+      onClick={handleClick}
     >
       {/* Shimmer loader */}
       {!loaded && (

@@ -9,6 +9,7 @@ import ImageCard from '../../components/shared/ImageCard'
 import Pagination from '../../components/shared/Pagination'
 import BulkActionBar from '../../components/shared/BulkActionBar'
 import Loader from '../../components/shared/Loader'
+import ImageViewer from '../../components/shared/ImageViewer'
 import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
 import toast from 'react-hot-toast'
@@ -23,6 +24,17 @@ const MyImagesPage = () => {
   const [totalPages, setTotalPages] = useState(1)
   const [selected, setSelected] = useState([])
   const [favorites, setFavorites] = useState(new Set())
+
+  // Viewer State
+  const [viewerOpen, setViewerOpen] = useState(false)
+  const [viewerIndex, setViewerIndex] = useState(0)
+
+  const openViewer = (image) => {
+    const index = images.findIndex(img => img._id === image._id)
+    setViewerIndex(index)
+    setViewerOpen(true)
+  }
+
   const hasFace = user?.faceDescriptor?.length === 128
 
   useEffect(() => {
@@ -233,6 +245,7 @@ const MyImagesPage = () => {
                     isSelected={selected.includes(image._id)}
                     isFavorited={favorites.has(image._id)}
                     isSelectionMode={selected.length > 0}
+                    onClickImage={openViewer}
                   />
                 ))}
               </div>
@@ -260,6 +273,18 @@ const MyImagesPage = () => {
         onDownload={handleBulkDownload}
         onFavorite={handleBulkFavorite}
         onClear={() => setSelected([])}
+      />
+
+      {/* Full Screen Image Viewer */}
+      <ImageViewer
+        isOpen={viewerOpen}
+        images={images}
+        currentIndex={viewerIndex}
+        onClose={() => setViewerOpen(false)}
+        onNext={() => setViewerIndex(prev => Math.min(images.length - 1, prev + 1))}
+        onPrev={() => setViewerIndex(prev => Math.max(0, prev - 1))}
+        onFavorite={handleFavorite}
+        isFavorited={images[viewerIndex] ? favorites.has(images[viewerIndex]._id) : false}
       />
     </div>
   )
