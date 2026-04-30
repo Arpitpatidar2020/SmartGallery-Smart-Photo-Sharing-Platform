@@ -11,9 +11,11 @@ import toast from 'react-hot-toast'
 import ImageViewer from '../../components/shared/ImageViewer'
 import { HiLockClosed } from 'react-icons/hi'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 
 const GroupDetailPage = () => {
   const { id } = useParams()
+  const { user } = useAuth()
   const [group, setGroup] = useState(null)
   const [images, setImages] = useState([])
   const [loading, setLoading] = useState(true)
@@ -36,8 +38,8 @@ const GroupDetailPage = () => {
 
   useEffect(() => {
     fetchGroup()
-    fetchFavIds()
-  }, [id])
+    if (user) fetchFavIds()
+  }, [id, user])
 
   const fetchFavIds = async () => {
     try {
